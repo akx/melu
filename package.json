@@ -1,0 +1,11 @@
+{
+  "devDependencies": {
+    "poi": "^9.6.1"
+  },
+  "scripts": {
+    "dev": "poi"
+  },
+  "dependencies": {
+    "mithril": "^1.1.6"
+  }
+}
