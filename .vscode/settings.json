@@ -12,4 +12,5 @@
         "valarray": "cpp",
         "vector": "cpp"
     },
+    "eslint.autoFixOnSave": false,
 }

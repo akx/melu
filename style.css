@@ -1,4 +1,40 @@
+* {
+    box-sizing: border-box
+}
+
+body {
+    margin: 0;
+    font: 10pt sans-serif;
+}
+
 svg {
     width: 100%;
     display: block;
+}
+
+main {
+    display: flex;
+    flex-direction: row;
+}
+
+div.s {
+    flex: 3;
+    padding: .5em;
+}
+
+div.c {
+    flex: 1;
+    padding: .5em;
+}
+
+.numed {
+    display: flex;
+}
+
+.numed label {
+    flex: 0;
+}
+
+.numed input {
+    flex: 1;
 }
