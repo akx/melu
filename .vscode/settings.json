@@ -4,4 +4,12 @@
         "editor.tabSize": 2,
         "editor.formatOnSave": true
     },
+    "files.associations": {
+        "deque": "cpp",
+        "hash_map": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "valarray": "cpp",
+        "vector": "cpp"
+    },
 }
