@@ -23,21 +23,21 @@ function genOsc() {
     id: uniqid(),
     amp: random(0, 1),
     ampMod: random(-0.0003, 0.0003),
-    freq: random(50, 500),
+    freq: Math.floor(random(50, 500)),
     freqMod: 0,
   };
   const fm = {
     enabled: Math.random() < 0.1,
     type: 'sin',
     id: uniqid(),
-    amp: random(50, 1000),
+    amp: Math.floor(random(50, 1000)),
     ampMod: 0,
     freq: random(50, 100),
     freqMod: random(-0.01, 0.01),
   };
   const filter = {
     id: uniqid(),
-    freq: random(100, 5000),
+    freq: Math.floor(random(100, 5000)),
     freqMod: 0,
     res: random(0.01, 0.8),
     type: getRandomValue(Types),
@@ -46,7 +46,7 @@ function genOsc() {
     id: uniqid(),
     enabled: true,
     type: 'sin',
-    freq: random(100, 1000),
+    freq: Math.floor(random(100, 1000)),
     freqMod: 0,
     amp: random(0.7, 1),
     ampMod: random(-0.00003, 0.00003),
