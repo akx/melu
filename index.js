@@ -16,37 +16,49 @@ function random(a, b) {
   return a + Math.random() * (b - a);
 }
 
+function genSubOsc(props) {
+  return Object.assign(
+    {
+      enabled: true,
+      type: 'sin',
+      id: uniqid(),
+      amp: random(0, 1),
+      ampMod: random(-0.0003, 0.0003),
+      freq: Math.floor(random(50, 500)),
+      freqMod: random(-0.1, 0.1),
+    },
+    props,
+  );
+}
+
+function genFilter(props) {
+  return Object.assign(
+    {
+      id: uniqid(),
+      freq: Math.floor(random(100, 5000)),
+      freqMod: 0,
+      res: random(0.01, 0.8),
+      type: getRandomValue(Types),
+    },
+    props,
+  );
+}
+
 function genOsc() {
-  const rm = {
+  const freq = Math.floor(random(100, 1000));
+  const rm = genSubOsc({
     enabled: Math.random() < 0.1,
-    type: 'sin',
-    id: uniqid(),
-    amp: random(0, 1),
-    ampMod: random(-0.0003, 0.0003),
-    freq: Math.floor(random(50, 500)),
-    freqMod: 0,
-  };
-  const fm = {
+  });
+  const fm = genSubOsc({
     enabled: Math.random() < 0.1,
-    type: 'sin',
-    id: uniqid(),
-    amp: Math.floor(random(50, 1000)),
-    ampMod: 0,
-    freq: random(50, 100),
-    freqMod: random(-0.01, 0.01),
-  };
-  const filter = {
-    id: uniqid(),
-    freq: Math.floor(random(100, 5000)),
-    freqMod: 0,
-    res: random(0.01, 0.8),
-    type: getRandomValue(Types),
-  };
+    amp: Math.floor(random(50, freq / 2)),
+  });
+  const filter = genFilter();
   return {
     id: uniqid(),
     enabled: true,
     type: 'sin',
-    freq: Math.floor(random(100, 1000)),
+    freq,
     freqMod: 0,
     amp: random(0.7, 1),
     ampMod: random(-0.00003, 0.00003),
@@ -64,13 +76,22 @@ function rerender() {
   const buf = ac.createBuffer(1, SAMPLE_RATE * 0.7, SAMPLE_RATE);
   const data = buf.getChannelData(0);
   syn.render(data);
+  let maxAmp = 0;
+  for (let i = 0; i < data.length; i++) {
+    maxAmp = Math.max(maxAmp, Math.abs(data[i]));
+  }
+  if (maxAmp > 1) {
+    for (let i = 0; i < data.length; i++) {
+      data[i] /= maxAmp;
+    }
+  }
   return buf;
 }
 
 const debouncedRerender = debounce(() => {
   buffer = rerender();
   m.redraw();
-}, 100);
+}, 30);
 
 function play(buf) {
   const bs = ac.createBufferSource();
@@ -110,10 +131,11 @@ function numEdit(object, field, min = 0, max = 1) {
     debouncedRerender();
   };
   const step = Math.abs(max - min) >= 5 ? 0.1 : 0.001;
+  const value = object[field] || 0;
   return m('div.numed', { key: field }, [
     m('label', field),
-    m('input', { type: 'number', min, max, step, value: object[field], onchange }),
-    m('input', { type: 'range', min, max, step, value: object[field], onchange }),
+    m('input', { type: 'number', min, max, step, value, onchange }),
+    m('input', { type: 'range', min, max, step, value, onchange, oninput: onchange }),
   ]);
 }
 
@@ -148,17 +170,59 @@ function filterEditor(filter) {
 }
 
 function oscEditor(osc, title = 'osc', showEnable = false) {
-  console.log(title, osc, osc.enabled);
   const content = osc.enabled
     ? [
-        selectRadios(osc, 'type', { sin: 'sin', sqr: 'sqr' }),
+        selectRadios(osc, 'type', { sin: 'sin', sqr: 'sqr', saw: 'saw' }),
+        m(
+          'label',
+          m('input', {
+            type: 'checkbox',
+            checked: !!osc.rectify,
+            onchange: (e) => {
+              osc.rectify = e.target.checked;
+              debouncedRerender();
+            },
+          }),
+          'rectify',
+        ),
         numEdit(osc, 'freq', 0, 10000),
+        numEdit(osc, 'phase', 0, 1),
         numEdit(osc, 'freqMod', -100, 100),
         numEdit(osc, 'amp', 0, 1),
         numEdit(osc, 'ampMod', -5, 5),
-        osc.fm ? oscEditor(osc.fm, 'fm', true) : null,
-        osc.rm ? oscEditor(osc.rm, 'rm', true) : null,
-        osc.filter ? filterEditor(osc.filter) : null,
+        osc.fm
+          ? oscEditor(osc.fm, 'fm', true)
+          : m(
+              'button',
+              {
+                onclick: () => {
+                  osc.fm = genSubOsc();
+                },
+              },
+              'add fm',
+            ),
+        osc.rm
+          ? oscEditor(osc.rm, 'rm', true)
+          : m(
+              'button',
+              {
+                onclick: () => {
+                  osc.rm = genSubOsc();
+                },
+              },
+              'add rm',
+            ),
+        osc.filter
+          ? filterEditor(osc.filter)
+          : m(
+              'button',
+              {
+                onclick: () => {
+                  osc.filter = genFilter();
+                },
+              },
+              'add filter',
+            ),
       ]
     : null;
   const enableCheckbox = showEnable
@@ -190,5 +254,4 @@ const view = () =>
   ]);
 
 buffer = rerender();
-play(buffer);
 m.mount(document.body, { view });
