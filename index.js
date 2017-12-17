@@ -16,8 +16,9 @@ function random(a, b) {
   return a + Math.random() * (b - a);
 }
 
-function genSubOsc(props) {
+function genSubOsc(into, props) {
   return Object.assign(
+    into,
     {
       enabled: true,
       type: 'sin',
@@ -31,41 +32,49 @@ function genSubOsc(props) {
   );
 }
 
-function genFilter(props) {
+function genFilter(into, props) {
   return Object.assign(
+    into,
     {
       id: uniqid(),
       freq: Math.floor(random(100, 5000)),
       freqMod: 0,
       res: random(0.01, 0.8),
+      resMod: 0,
       type: getRandomValue(Types),
     },
     props,
   );
 }
 
-function genOsc() {
+function genOsc(into = {}) {
   const freq = Math.floor(random(100, 1000));
-  const rm = genSubOsc({
-    enabled: Math.random() < 0.1,
-  });
-  const fm = genSubOsc({
-    enabled: Math.random() < 0.1,
-    amp: Math.floor(random(50, freq / 2)),
-  });
-  const filter = genFilter();
-  return {
+  const rm = genSubOsc(
+    {},
+    {
+      enabled: Math.random() < 0.1,
+    },
+  );
+  const fm = genSubOsc(
+    {},
+    {
+      enabled: Math.random() < 0.1,
+      amp: Math.floor(random(50, freq / 2)),
+    },
+  );
+  const filter = genFilter({});
+  return Object.assign(into, {
     id: uniqid(),
     enabled: true,
     type: 'sin',
     freq,
     freqMod: 0,
-    amp: random(0.7, 1),
-    ampMod: random(-0.00003, 0.00003),
+    amp: 1,
+    ampMod: random(-0.1, 0.1),
     fm,
     rm,
     filter,
-  };
+  });
 }
 
 const syn = new MeluSynth(SAMPLE_RATE);
@@ -76,14 +85,13 @@ function rerender() {
   const buf = ac.createBuffer(1, SAMPLE_RATE * 0.7, SAMPLE_RATE);
   const data = buf.getChannelData(0);
   syn.render(data);
-  let maxAmp = 0;
+  let maxAmp = null;
   for (let i = 0; i < data.length; i++) {
-    maxAmp = Math.max(maxAmp, Math.abs(data[i]));
+    const val = Math.abs(data[i]);
+    maxAmp = maxAmp === null ? val : Math.max(maxAmp, Math.abs(data[i]));
   }
-  if (maxAmp > 1) {
-    for (let i = 0; i < data.length; i++) {
-      data[i] /= maxAmp;
-    }
+  for (let i = 0; i < data.length; i++) {
+    data[i] /= maxAmp;
   }
   return buf;
 }
@@ -119,7 +127,7 @@ function drawData(data) {
       points: mapStep(
         data,
         1,
-        (y, i) => `${(i / data.length * 800).toFixed(2)},${Math.round(100 + y * 90)}`,
+        (y, i) => `${(i / data.length * 800).toFixed(2)},${Math.round(100 - y * 90)}`,
       ).join(' '),
     }),
   );
@@ -166,13 +174,14 @@ function filterEditor(filter) {
     numEdit(filter, 'freq', 0, 10000),
     numEdit(filter, 'freqMod', -5000, 5000),
     numEdit(filter, 'res', 0, 15),
+    numEdit(filter, 'resMod', -30, 30),
   ]);
 }
 
 function oscEditor(osc, title = 'osc', showEnable = false) {
   const content = osc.enabled
     ? [
-        selectRadios(osc, 'type', { sin: 'sin', sqr: 'sqr', saw: 'saw' }),
+        selectRadios(osc, 'type', { sin: 'sin', sqr: 'sqr', psqr: 'psqr', saw: 'saw' }),
         m(
           'label',
           m('input', {
