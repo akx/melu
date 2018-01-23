@@ -4,6 +4,7 @@ module.exports = {
     'browser': true,
   },
   'rules': {
+    'max-len': 'off',
     'one-var': 'off',
     'object-curly-newline': 'off',
     'no-param-reassign': 'off',

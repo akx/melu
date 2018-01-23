@@ -64,15 +64,17 @@ const view = () =>
     m('div.s', buffer ? drawData(buffer.getChannelData(0)) : null),
     m(
       'div.c',
+      m('div.tools', [
+        m('button', { onclick: () => play(buffer) }, 'play'),
+        labeledCheckbox(autoPlay, 'autoplay', (flag) => {
+          autoPlay = flag;
+        }),
+        labeledCheckbox(normalize, 'normalize', (flag) => {
+          normalize = flag;
+          debouncedRerender();
+        }),
+      ]),
       m('div', syn.oscs.map(osc => oscEditor(osc))),
-      m('button', { onclick: () => play(buffer) }, 'play'),
-      labeledCheckbox(autoPlay, 'autoplay', (flag) => {
-        autoPlay = flag;
-      }),
-      labeledCheckbox(normalize, 'normalize', (flag) => {
-        normalize = flag;
-        debouncedRerender();
-      }),
     ),
   ]);
 
